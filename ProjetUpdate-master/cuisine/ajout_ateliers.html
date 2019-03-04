@@ -1,0 +1,161 @@
+<!-- <?php -->
+//connexion bdd
+try{
+$bdd = New PDO('mysql:host=localhost;dbname=ateliers_cuisine;charset=utf8', 'root','',array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+}
+catch(Exception $e)
+{
+     die('Erreur : '.$e->getMessage());
+}
+$req=$bdd->query('SELECT * FROM roles');
+//var_dump($_POST);   ->pour verrifier les erreur
+//die();
+
+//traitement formulaire
+if(isset($_POST['form_utilisateur']))
+{
+    //stock mes valeurs des $_POST
+        $nom = htmlspecialchars($_POST['nom_util']);
+        $prenom = htmlspecialchars($_POST['prenom_util']);
+        $mdp = sha1($_POST['mot_passe']);
+        $mail = htmlspecialchars($_POST['mail']);
+        $mail2 = htmlspecialchars($_POST['mail2']);
+        $tel = htmlspecialchars($_POST['tel']);
+        $specialite= htmlspecialchars($_POST['specialite']);
+        $role=htmlspecialchars($_POST['roles_utili']);
+        //Vérifier existence et si non vide
+        
+        if (!empty($nom) AND !empty($prenom) AND !empty($mdp) AND !empty($mail) AND !empty($mail2) AND isset($tel) AND isset($specialite) AND !empty($role)) 
+        {  //Vérifie si les 2 mail corresponds
+            if($mail==$mail2)
+                {
+                    
+                
+               
+
+                    //Vérification si le mail existe déja dans la base de donnée
+                    $reqmail=$bdd->prepare("SELECT*FROM utilisateurs WHERE email=?"); 
+                        $reqmail->execute(array($mail));
+                        $mailexist=$reqmail->rowCount();//compte le nbr de colonne existant pour les info saisi avant
+                        //Si le mail n'existe pas alors le formulaire est valide
+                    if($mailexist==0)
+                    {
+                
+                        //prepare insert into pour envoyer des données dans la BDD
+                        $utilisateur = $bdd -> prepare('INSERT INTO utilisateurs (nom, prenom,mdp,email,tel,specialite) VALUES (?,?,?,?,?,?)');
+                        $utilisateur ->execute(array($nom, $prenom,$mdp, $mail,$tel,$specialite));
+                        $message ="Votre compte a bien été ajoutée! <a href=\"connect.php\">Connexion</a>";
+
+                        //recupère le dernier id utilisateur id role
+                        $id=$bdd->lastInsertId();
+                        
+                        if ($role !=0) 
+                        {
+                            $utilisateur_role=$bdd->prepare('INSERT INTO utilisateurs_roles(id_utilisateur,id_role) VALUES(?,?)');
+                            $utilisateur_role ->execute(array($id,$role));
+                        }
+                    }//sinon si le mail est >0 c a dire qu'il existe dans la bdd alors le message erreur s'affiche 
+                    else{
+                    $message="Adresse mail déja utiliser";}
+                }
+                else
+                {//si les 2mail saisi correspond pas alors le message erreur s'affiche
+                    $message="Vos adresse mail de correspond pas";}
+                 
+        }
+        else
+        {
+            $message ='Il manque un renseignement.';
+        }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ajout_atelier</title>
+</head>
+<body class="body">
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<link rel="stylesheet" type= "text/css" href="ajout_ateliers.css">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+
+    <div class="container">    
+
+        <div id="signupbox" style=" margin-top:50px" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2">
+            <div class="panel panel-info">
+                <div class="panel-title">
+                    <div class="panel-title"><h3>AJOUT ATELIERS</h3></div>
+                </div>  
+                <div class="panel-body" >
+                    <form id="signupform" class="form-horizontal" role="form">     
+                        <div id="titre">
+                            <label for="title" class="col-md-3 control-label">Titre</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" name="titre" placeholder="Titre">
+                            </div>
+                        </div><br>
+                            
+                        <div class="form-group">
+                            <label for="descriptif" class="col-md-3 control-label">Descriptif</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" name="Descriptif" placeholder="Descriptif">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="Date" class="col-md-3 control-label">Date</label>
+                            <div class="col-md-9">
+                                <input type="date" class="form-control" name="ajout_date" placeholder="Date">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="time" class="col-md-3 control-label">Horaire du début</label>
+                            <div class="col-md-9">
+                                <input type="time" class="form-control" name="time" placeholder="Horaire du début">
+                            </div>
+                        </div>
+                            
+                        <div class="form-group">
+                            <label for="place_dispo" class="col-md-3 control-label">Place disponible</label>
+                            <div class="col-md-9">
+                                <input type="number" class="form-control" name="place_dispo" placeholder="Place disponible">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ajout_reserver" class="col-md-3 control-label">Place réservé</label>
+                            <div class="col-md-9">
+                                <input type="number" class="form-control" name="ajout_reserver" placeholder="Place réservé">
+                            </div><br>
+                        <div class="form-group">
+                        <label for="ajout_prix" class="col-md-3 control-label">Prix €</label>
+                        <div class="col-md-9">
+                            <input type="number" class="form-control" name="ajout_prix" placeholder="Prix">
+                        </div>
+                        
+                        </div>
+                        <div class="form-group">
+                            <!-- Button -->                                        
+                            <div class="col-md-offset-3 col-md-9">
+                                <button id="btn-signup" type="submit" class="btn btn-info col-md-12"><i class="icon-hand-right"></i>Ajouter</button>     
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div> 
+    </div>
+    
+</body>
+</html>
+
+
+
+
+
+
